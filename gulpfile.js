@@ -13,7 +13,7 @@ var paths = {};
 
 paths.src = {};
 paths.src.root = './src';
-paths.src.js    = path.join(paths.src.root, 'js/*.js');
+paths.src.js    = path.join(paths.src.root, '*.js');
 
 paths.build = {};
 paths.build.root  = './build';
@@ -22,13 +22,6 @@ paths.build.js    = path.join(paths.build.root, 'index.js');
 paths.dist = {};
 paths.dist.root = './dist';
 paths.dist.js   = path.join(paths.dist.root, 'index.js');
-
-
-var creds = {
-    'key': process.env.AWS_ACCESS_KEY_ID,
-    'secret': process.env.AWS_SECRET_ACCESS_KEY,
-    'bucket': 'jspc-static-site'
-};
 
 var isDev = gutil.env.dev;
 
@@ -74,8 +67,6 @@ gulp.task('compile:js', function() {
         .pipe(isDev ? gutil.noop() : uglify())
         .pipe(gulp.dest(isDev ? paths.build.root : paths.dist.root))
 });
-
-var publisher = aws.create(creds);
 
 gulp.task('deploy:lambda', function(callback) {
     return  gulp.src(paths.dist.js)
