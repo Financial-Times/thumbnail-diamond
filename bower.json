@@ -1,0 +1,20 @@
+{
+  "name": "thumbnail-diamond",
+  "version": "0.0.1",
+  "homepage": "https://github.com/jspc/thumbnail-diamond",
+  "authors": [
+    "jspc <james@zero-internet.org.uk>"
+  ],
+  "description": "Take a simple image and do soem thumbnailry around it",
+  "main": "index.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+  }
+}
