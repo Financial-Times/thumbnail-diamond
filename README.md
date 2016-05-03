@@ -8,8 +8,11 @@ Thumbnail Diamond
 ```json
 {
   "mediaId": 12345,
-  "posterUrl": "https://example.com/poster.png",
-  "playerImgUrl": "https://example.com/player_img.png"
+  "images": {
+    "poster": "https://example.com/poster.png",
+    "player": "https://example.com/player_img.png",
+    "smallPlayer": "https://example.com/small_player_img.png"
+  }
 }
 ```
 
