@@ -8,7 +8,7 @@ Thumbnail Diamond
 ```json
 {
   "mediaId": 12345,
-  "images": {
+  "image": {
     "poster": "https://example.com/poster.png",
     "player": "https://example.com/player_img.png",
     "smallPlayer": "https://example.com/small_player_img.png"
@@ -26,4 +26,14 @@ some-s3-bucket/
     └── small_player.png
 ```
 
-It reads in burner information from some other bucket
+It reads in burner information from some other bucket.
+
+The `image` object uses hierarchical inference to determine images to pull as per:
+
+```javascript
+    var posterImage = event.image.poster;
+    playerImage = event.image.player || posterImage;
+    smallPlayerImage = event.image.smallPlayer || playerImage;
+```
+
+Thus some images may be skipped.
