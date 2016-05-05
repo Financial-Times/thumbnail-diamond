@@ -59,7 +59,7 @@ var resizeImage = function(file, callback){
         'poster': { x: 2048, y: 1152 },
         'player': { x: 167, y: 96 },
         'small_player': { x: 167, y: 96 }
-    }[ fileParsed.name ]
+    }[ fileParsed.name ];
 
     var outputFilename = [fileParsed.name, 'resized', 'png'].join('.'),
         outputPath = path.join(fileParsed.dir, outputFilename);
