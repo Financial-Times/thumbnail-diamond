@@ -64,7 +64,6 @@ gulp.task('compile:js', function() {
     return gulp.src([ paths.src.js
                     ])
         .pipe(concat('index.js'))
-        .pipe(isDev ? gutil.noop() : uglify())
         .pipe(gulp.dest(isDev ? paths.build.root : paths.dist.root))
 });
 
