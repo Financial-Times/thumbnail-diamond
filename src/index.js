@@ -13,14 +13,14 @@ var main = function(event, context, callback){
         playerPath = path.join(tmpdir, 'player.png'),
         smallPlayerPath = path.join(tmpdir, 'small_player.png');
 
-    var posterImage = event.image.poster;
-    playerImage = event.image.player || posterImage;
-    smallPlayerImage = event.image.smallPlayer || playerImage;
+    var posterImage = event.image.poster,
+        playerImage = event.image.player || posterImage,
+        smallPlayerImage = event.image.smallPlayer || playerImage;
 
     async.parallel([
         processImage(posterImage, posterPath, 'poster'),
-//        processImage(playerImage, playerPath, 'player'),
-//        processImage(smallPlayerImage, smallPlayerPath, 'smallPlayer'),
+        processImage(playerImage, playerPath, 'player'),
+        processImage(smallPlayerImage, smallPlayerPath, 'smallPlayer'),
     ]);
 };
 
@@ -58,11 +58,11 @@ var resizeImage = function(file, callback){
     var profile = {
         'poster': { x: 2048, y: 1152 },
         'player': { x: 167, y: 96 },
-        'smallPlayer': { x: 167, y: 96 }
+        'small_player': { x: 167, y: 96 }
     }[ fileParsed.name ]
 
-    var outputFilename = [fileParsed.name, 'resized', 'png'].join('.');
-    var outputPath = path.join(fileParsed.dir, outputFilename);
+    var outputFilename = [fileParsed.name, 'resized', 'png'].join('.'),
+        outputPath = path.join(fileParsed.dir, outputFilename);
 
     gm(file)
         .resize(profile.x, profile.y)
