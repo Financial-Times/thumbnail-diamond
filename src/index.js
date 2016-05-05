@@ -13,7 +13,7 @@ var profiles = {
     'secondary': { x: 167, y: 96, overlay: 'nooz_small.png' },
     'secondaryVideo': { x: 167, y: 96, overlay: 'nooz_small_play.png' },
     'triplet': { x: 167, y: 96, overlay: 'nooz_small.png' }
-}
+};
 
 var main = function(event, context, callback){
     var tmpdir = createDir(),
@@ -91,14 +91,9 @@ var burnInLayers = function(file, type, callback){
     // grab some layers from S3 and apply relevant ones
     console.log('Burn in layers on ' + file);
 
-    var profile = profiles[ type ];
-    var fileParsed = path.parse(file),
-        outputFilename = [fileParsed.name, 'resized', 'png'].join('.'),
-        outputPath = path.join(fileParsed.dir, outputFilename);
-
     var overlay = profiles[ type ].overlay;
-
-    var outputFilename = [fileParsed.name, 'overlayed', 'png'].join('.'),
+    var fileParsed = path.parse(file),
+        outputFilename = [fileParsed.name, 'overlayed', 'png'].join('.'),
         outputPath = path.join(fileParsed.dir, outputFilename);
 
     gm()
