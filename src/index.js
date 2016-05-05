@@ -3,6 +3,7 @@ var http = require('http');
 var fs = require('fs');
 var path = require("path");
 var async = require("async");
+var gm = require('gm').subClass({ imageMagick: true });
 
 //exports.handler = main(event, context, callback);
 
@@ -39,6 +40,7 @@ var createDir = function(){
 var download = function(url, dest, callback) {
     console.log("Downloading " + url);
     var file = fs.createWriteStream(dest);
+
     http.get(url, function (res) {
         res.pipe(file, {end: 'false'});
         res.on('end', function () {
@@ -51,7 +53,29 @@ var download = function(url, dest, callback) {
 
 var resizeImage = function(file, callback){
     console.log('Resizing ' + file);
-    callback(null, file);
+
+    var fileParsed = path.parse(file);
+    var profile = {
+        'poster': { x: 2048, y: 1152 },
+        'player': { x: 167, y: 96 },
+        'smallPlayer': { x: 167, y: 96 }
+    }[ fileParsed.name ]
+
+    var outputFilename = [fileParsed.name, 'resized', 'png'].join('.');
+    var outputPath = path.join(fileParsed.dir, outputFilename);
+
+    gm(file)
+        .resize(profile.x, profile.y)
+        .autoOrient()
+        .write(outputPath, function (err) {
+            if (err) throw err;
+            fs.rename(outputPath, file, function(err){
+                if (err) throw err;
+
+                console.log('resized ' + file);
+                callback(null, file);
+            });
+        });
 };
 
 var burnInLayers = function(file, callback){
