@@ -14,14 +14,17 @@ var paths = {};
 paths.src = {};
 paths.src.root = './src';
 paths.src.js    = path.join(paths.src.root, '*.js');
+paths.src.img   = path.join(paths.src.root, 'img', '**/*');
 
 paths.build = {};
 paths.build.root  = './build';
 paths.build.js    = path.join(paths.build.root, 'index.js');
+paths.build.img   = path.join(paths.build.root, 'img', '**/*');
 
 paths.dist = {};
 paths.dist.root = './dist';
 paths.dist.js   = path.join(paths.dist.root, 'index.js');
+paths.src.img   = path.join(paths.dist.root, 'img', '**/*');
 
 var isDev = gutil.env.dev;
 
@@ -67,6 +70,13 @@ gulp.task('compile:js', function() {
         .pipe(gulp.dest(isDev ? paths.build.root : paths.dist.root))
 });
 
+gulp.task('compile:img', function() {
+    return gulp.src([ paths.src.img
+                    ])
+        .pipe(gulp.dest(isDev ? paths.build.img : paths.dist.img))
+});
+
+
 gulp.task('deploy:lambda', function(callback) {
     return  gulp.src(paths.dist.js)
             .pipe(zip('archive.zip'))
@@ -79,7 +89,7 @@ gulp.task('deploy', function(callback) {
 });
 
 gulp.task('compile', function(callback) {
-    sequence('compile:clean', ['compile:js'], callback);
+    sequence('compile:clean', ['compile:js', 'compile:img'], callback);
 });
 
 gulp.task('lint', ['lint:js']);
