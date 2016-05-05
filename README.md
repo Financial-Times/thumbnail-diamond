@@ -9,9 +9,9 @@ Thumbnail Diamond
 {
   "mediaId": 12345,
   "image": {
-    "poster": "https://example.com/poster.png",
-    "player": "https://example.com/player_img.png",
-    "smallPlayer": "https://example.com/small_player_img.png"
+    "master": "https://example.com/poster.png",
+    "secondary": "https://example.com/player_img.png",
+    "triplet": "https://example.com/small_player_img.png"
   }
 }
 ```
