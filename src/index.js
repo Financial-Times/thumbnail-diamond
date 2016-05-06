@@ -32,10 +32,6 @@ var main = function(event, context, callback){
         secondaryVideoImage = secondaryImage,
         tripletImage = event.image.triplet || secondaryImage;
 
-    var imageObject = {
-        id: event.mediaId
-    };
-
     async.parallel([
         processImage(masterImage,
                      {id: event.mediaId, source: masterImage, dest: masterPath, type: 'master'}),
