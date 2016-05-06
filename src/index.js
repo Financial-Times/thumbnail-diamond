@@ -1,12 +1,10 @@
-var aws = require('aws');
+var aws = require('aws-sdk');
 var mktemp = require('mktemp');
 var http = require('http');
 var fs = require('fs');
 var path = require("path");
 var async = require("async");
 var gm = require('gm').subClass({ imageMagick: true });
-
-exports.handler = main(event, context, callback);
 
 var profiles = {
     'master': { x: 2048, y: 1152, overlay: 'nooz.png' },
@@ -16,9 +14,9 @@ var profiles = {
     'triplet': { x: 167, y: 96, overlay: 'nooz_small.png' }
 };
 
-var bucket = new AWS.S3({params: {Bucket: 'thumbnail-diamond'}});
+var bucket = new aws.S3({params: {Bucket: 'thumbnail-diamond'}});
 
-var main = function(event, context, callback){
+exports.handler = function(event, context, callback){
     var tmpdir = createDir(),
         masterPath = path.join(tmpdir, 'master.png'),
         plasmaPath = path.join(tmpdir, 'plasma.png'),
@@ -33,22 +31,29 @@ var main = function(event, context, callback){
         tripletImage = event.image.triplet || secondaryImage;
 
     async.parallel([
-        processImage(masterImage,
-                     {id: event.mediaId, source: masterImage, dest: masterPath, type: 'master'}),
-        processImage(plasmaImage,
-                     {id: event.mediaId, source: plasmaImage, dest: plasmaPath, type: 'plasma'}),
-        processImage(secondaryImage,
-                     {id: event.mediaId, source: secondaryImage, dest: secondaryPath, type: 'secondary'}),
-        processImage(secondaryVideoImage,
-                     {id: event.mediaId, source: secondaryVideoImage, dest: secondaryVideoPath, type: 'secondaryVideo'}),
-        processImage(tripletImage,
-                     {id: event.mediaId, source: tripletImage, dest: tripletPath, type: 'triplet'}),
+        processImage({id: event.mediaId, source: masterImage, dest: masterPath, type: 'master'}),
+        processImage({id: event.mediaId, source: plasmaImage, dest: plasmaPath, type: 'plasma'}),
+        processImage({id: event.mediaId, source: secondaryImage, dest: secondaryPath, type: 'secondary'}),
+        processImage({id: event.mediaId, source: secondaryVideoImage, dest: secondaryVideoPath, type: 'secondaryVideo'}),
+        processImage({id: event.mediaId, source: tripletImage, dest: tripletPath, type: 'triplet'}),
     ]);
+
+    callback(null, {
+        mediaId: event.mediaId,
+        baseUrl: 'https://s3-eu-west-1.amazonaws.com/thumbnail-diamond/' + event.mediaId,
+        image: {
+            master: '/master.png',
+            plasma: '/plasma.png',
+            secondary: '/secondary.png',
+            secondaryVideo: '/secondaryVideo.png',
+            triplet: '/triplet.png'
+        }
+    });
 };
 
 var processImage = function(imageObject){
     async.waterfall([
-        async.apply(imageObject),
+        async.apply(download, imageObject),
         resizeImage,
         burnInLayers,
         uploadImage
@@ -132,20 +137,17 @@ var uploadImage = function(imageObject, callback){
     var file = imageObject.dest,
         id = imageObject.id;
 
-    var fileParsed = path.parse(file);
+    console.log('Upload file ' + file);
 
-    console.log('Upload file');
+    var fileParsed = path.parse(file);
     var params = {
         Key: id + '/' + fileParsed.base,
-        Body: file.createReadStream(file)
+        Body: fs.createReadStream(file)
     };
 
     bucket.upload(params, function(err, data) {
-        if (err) {
-            console.log('ERROR MSG: ', err);
-        } else {
-            console.log('Successfully uploaded data');
-        }
+        if (err) throw err;
+        console.log('uploaded ' + fileParsed.base + ' to s3://thumbnail-diamond/' + params.Key);
+        callback(null, imageObject);
     });
-    callback(null, file);
 };
