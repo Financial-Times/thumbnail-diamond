@@ -133,5 +133,23 @@ var burnInLayers = function(imageObject, callback){
 };
 
 var uploadImage = function(imageObject, callback){
+    var file = imageObject.dest,
+        id = imageObject.id;
+
+    var fileParsed = path.parse(file);
+
+    console.log('Upload file');
+    var params = {
+        Key: id + '/' + fileParsed.base,
+        Body: file.createReadStream(file)
+    };
+
+    bucket.upload(params, function(err, data) {
+        if (err) {
+            console.log('ERROR MSG: ', err);
+        } else {
+            console.log('Successfully uploaded data');
+        }
+    });
     callback(null, file);
 };
