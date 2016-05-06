@@ -1,3 +1,4 @@
+var aws = require('aws');
 var mktemp = require('mktemp');
 var http = require('http');
 var fs = require('fs');
@@ -15,6 +16,8 @@ var profiles = {
     'triplet': { x: 167, y: 96, overlay: 'nooz_small.png' }
 };
 
+var bucket = new AWS.S3({params: {Bucket: 'thumbnail-diamond'}});
+
 var main = function(event, context, callback){
     var tmpdir = createDir(),
         masterPath = path.join(tmpdir, 'master.png'),
@@ -29,18 +32,27 @@ var main = function(event, context, callback){
         secondaryVideoImage = secondaryImage,
         tripletImage = event.image.triplet || secondaryImage;
 
+    var imageObject = {
+        id: event.mediaId
+    };
+
     async.parallel([
-        processImage(masterImage, masterPath, 'master'),
-        processImage(plasmaImage, plasmaPath, 'plasma'),
-        processImage(secondaryImage, secondaryPath, 'secondary'),
-        processImage(secondaryVideoImage, secondaryVideoPath, 'secondaryVideo'),
-        processImage(tripletImage, tripletPath, 'triplet'),
+        processImage(masterImage,
+                     {id: event.mediaId, source: masterImage, dest: masterPath, type: 'master'}),
+        processImage(plasmaImage,
+                     {id: event.mediaId, source: plasmaImage, dest: plasmaPath, type: 'plasma'}),
+        processImage(secondaryImage,
+                     {id: event.mediaId, source: secondaryImage, dest: secondaryPath, type: 'secondary'}),
+        processImage(secondaryVideoImage,
+                     {id: event.mediaId, source: secondaryVideoImage, dest: secondaryVideoPath, type: 'secondaryVideo'}),
+        processImage(tripletImage,
+                     {id: event.mediaId, source: tripletImage, dest: tripletPath, type: 'triplet'}),
     ]);
 };
 
-var processImage = function(source, dest, type){
+var processImage = function(imageObject){
     async.waterfall([
-        async.apply(download, source, dest, type),
+        async.apply(imageObject),
         resizeImage,
         burnInLayers,
         uploadImage
@@ -51,7 +63,10 @@ var createDir = function(){
     return mktemp.createDirSync('/tmp/XXXXXXX');
 };
 
-var download = function(url, dest, type, callback) {
+var download = function(imageObject, callback) {
+    var url = imageObject.source,
+        dest = imageObject.dest;
+
     console.log("Downloading " + url);
     var file = fs.createWriteStream(dest);
 
@@ -60,12 +75,15 @@ var download = function(url, dest, type, callback) {
         res.on('end', function () {
             file.end();
             console.log("Downloaded " + url + " to " + dest);
-            callback(null, dest, type);
+            callback(null, imageObject);
         });
     });
 };
 
-var resizeImage = function(file, type, callback){
+var resizeImage = function(imageObject, callback){
+    var file = imageObject.dest,
+        type = imageObject.type;
+
     console.log('Resizing ' + file);
 
     var profile = profiles[ type ];
@@ -82,13 +100,15 @@ var resizeImage = function(file, type, callback){
                 if (err) throw err;
 
                 console.log('Resized ' + file);
-                callback(null, file, type);
+                callback(null, imageObject);
             });
         });
 };
 
-var burnInLayers = function(file, type, callback){
-    // grab some layers from S3 and apply relevant ones
+var burnInLayers = function(imageObject, callback){
+    var file = imageObject.dest,
+        type = imageObject.type;
+
     console.log('Burn in layers on ' + file);
 
     var overlay = profiles[ type ].overlay;
@@ -107,12 +127,11 @@ var burnInLayers = function(file, type, callback){
                 if (err) throw err;
 
                 console.log('resized ' + file);
-                callback(null, file);
+                callback(null, imageObject);
             });
         });
 };
 
-var uploadImage = function(file, callback){
-    console.log('Upload file');
+var uploadImage = function(imageObject, callback){
     callback(null, file);
 };
