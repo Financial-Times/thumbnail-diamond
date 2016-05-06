@@ -8,7 +8,8 @@ var lambda = require('gulp-awslambda');
 var path = require('path');
 var sequence = require('run-sequence');
 var uglify = require('gulp-uglify');
-
+var zip = require('gulp-zip');
+var install = require("gulp-install");
 var paths = {};
 
 paths.src = {};
@@ -19,12 +20,12 @@ paths.src.img   = path.join(paths.src.root, 'img', '**/*');
 paths.build = {};
 paths.build.root  = './build';
 paths.build.js    = path.join(paths.build.root, 'index.js');
-paths.build.img   = path.join(paths.build.root, 'img', '**/*');
+paths.build.img   = path.join(paths.build.root, 'img');
 
 paths.dist = {};
 paths.dist.root = './dist';
 paths.dist.js   = path.join(paths.dist.root, 'index.js');
-paths.src.img   = path.join(paths.dist.root, 'img', '**/*');
+paths.dist.img   = path.join(paths.dist.root, 'img');
 
 var isDev = gutil.env.dev;
 
@@ -40,11 +41,11 @@ var lambdaParams = {
     FunctionName: 'thumbnail',
     MemorySize: 128,
     Role: gutil.env.arn,
-    Timeout: 5
+    Timeout: 10
 };
 
 var awsOpts = {
-    profile: isDev ? 'dev' : 'prod',
+    profile: gutil.env.profile,
     region: 'eu-west-1'
 };
 
@@ -54,11 +55,11 @@ gulp.task('lint:js', function() {
         .pipe(jshint.reporter('unix'));
 });
 
-gulp.task('compile:clean', function(callback) {
+gulp.task('compile:clean', function() {
     if (isDev) {
-        del([paths.build.root], callback);
+        del([paths.build.root]);
     } else {
-        del([paths.dist.root], callback);
+        del([paths.dist.root]);
     }
 });
 
@@ -76,16 +77,24 @@ gulp.task('compile:img', function() {
         .pipe(gulp.dest(isDev ? paths.build.img : paths.dist.img))
 });
 
+gulp.task('dependencies:npm', function() {
+    return gulp.src(__dirname + '/package.json')
+        .pipe(gulp.dest( paths.dist.root ))
+        .pipe(install({production: true}));
+});
 
-gulp.task('deploy:lambda', function(callback) {
-    return  gulp.src(paths.dist.js)
-            .pipe(zip('archive.zip'))
-            .pipe(lambda(lambdaParams, awsOpts))
-//            .pipe(gulp.dest('.'));
+gulp.task('deploy:lambda', function() {
+    return  gulp.src(paths.dist.root + '/**/*')
+        .pipe(zip('archive.zip'))
+        .pipe(lambda(lambdaParams, awsOpts));
 });
 
 gulp.task('deploy', function(callback) {
     sequence('deploy:lambda', callback);
+});
+
+gulp.task('dependencies', function(callback) {
+    sequence('dependencies:npm', callback);
 });
 
 gulp.task('compile', function(callback) {
@@ -98,6 +107,6 @@ gulp.task('default', function(callback) {
     if (isDev) {
         sequence('env', 'lint', 'compile', callback);
     } else {
-        sequence('env', 'lint', 'compile', 'deploy', callback);
+        sequence('env', 'lint', 'compile', 'dependencies', 'deploy', callback);
     }
 });
