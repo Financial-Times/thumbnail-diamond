@@ -5,7 +5,7 @@ var path = require("path");
 var async = require("async");
 var gm = require('gm').subClass({ imageMagick: true });
 
-//exports.handler = main(event, context, callback);
+exports.handler = main(event, context, callback);
 
 var profiles = {
     'master': { x: 2048, y: 1152, overlay: 'nooz.png' },
@@ -116,14 +116,3 @@ var uploadImage = function(file, callback){
     console.log('Upload file');
     callback(null, file);
 };
-
-var event = {
-    mediaId: 12345,
-    image: {
-        master: "http://www.stlucianewsonline.com/wp-content/uploads/2015/12/o-HOUSE-ON-FIRE-facebook.jpg",
-        // player: "http://www.stlucianewsonline.com/wp-content/uploads/2015/12/o-HOUSE-ON-FIRE-facebook.jpg",
-        // smallPlayer: "http://www.stlucianewsonline.com/wp-content/uploads/2015/12/o-HOUSE-ON-FIRE-facebook.jpg"
-    }
-};
-
-main(event);
