@@ -41,7 +41,7 @@ var lambdaParams = {
     FunctionName: 'thumbnail',
     MemorySize: 128,
     Role: gutil.env.arn,
-    Timeout: 10
+    Timeout: 30
 };
 
 var awsOpts = {
