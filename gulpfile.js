@@ -39,9 +39,9 @@ gulp.task('env', function() {
 
 var lambdaParams = {
     FunctionName: 'thumbnail',
-    MemorySize: 128,
+    MemorySize: 1024,
     Role: gutil.env.arn,
-    Timeout: 30
+    Timeout: 300
 };
 
 var awsOpts = {
