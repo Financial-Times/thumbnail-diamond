@@ -7,11 +7,10 @@ var async = require("async");
 var gm = require('gm').subClass({ imageMagick: true });
 
 var profiles = {
-    'master': { x: 2048, y: 1152, overlay: 'nooz.png' },
-    'plasma': { x: 1920, y: 1080, overlay: 'nooz.png' },
-    'secondary': { x: 167, y: 96, overlay: 'nooz_small.png' },
-    'secondaryVideo': { x: 167, y: 96, overlay: 'nooz_small_play.png' },
-    'triplet': { x: 167, y: 96, overlay: 'nooz_small.png' }
+    'master': { x: 2048, y: 1152 },
+    'plasma': { x: 1920, y: 1080 },
+    'secondary': { x: 167, y: 96 },
+    'secondaryVideo': { x: 167, y: 96 }
 };
 
 var bucket = new aws.S3({params: {Bucket: 'thumbnail-diamond'}});
@@ -22,20 +21,21 @@ exports.handler = function(event, context, callback){
         plasmaPath = path.join(tmpdir, 'plasma.png'),
         secondaryPath = path.join(tmpdir, 'secondary.png');
         secondaryVideoPath = path.join(tmpdir, 'secondaryVideo.png');
-        tripletPath = path.join(tmpdir, 'triplet.png');
 
     var masterImage = event.image.master,
         plasmaImage = masterImage,
         secondaryImage = event.image.secondary || masterImage,
-        secondaryVideoImage = secondaryImage,
-        tripletImage = event.image.triplet || secondaryImage;
+        secondaryVideoImage = secondaryImage;
 
     async.parallel([
-        processImage({id: event.mediaId, source: masterImage, dest: masterPath, type: 'master'}),
-        processImage({id: event.mediaId, source: plasmaImage, dest: plasmaPath, type: 'plasma'}),
-        processImage({id: event.mediaId, source: secondaryImage, dest: secondaryPath, type: 'secondary'}),
-        processImage({id: event.mediaId, source: secondaryVideoImage, dest: secondaryVideoPath, type: 'secondaryVideo'}),
-        processImage({id: event.mediaId, source: tripletImage, dest: tripletPath, type: 'triplet'}),
+        processImage({id: event.mediaId, brand: event.brand, source: masterImage, dest: masterPath, type: 'master'}),
+        function(){
+            if (event.plasma) {
+                processImage({id: event.mediaId, brand: event.brand, source: plasmaImage, dest: plasmaPath, type: 'plasma'});
+            }
+        },
+        processImage({id: event.mediaId, brand: event.brand, source: secondaryImage, dest: secondaryPath, type: 'secondary'}),
+        processImage({id: event.mediaId, brand: event.brand, source: secondaryVideoImage, dest: secondaryVideoPath, type: 'secondaryVideo'}),
     ]);
 
     callback(null, {
@@ -46,7 +46,6 @@ exports.handler = function(event, context, callback){
             plasma: '/plasma.png',
             secondary: '/secondary.png',
             secondaryVideo: '/secondaryVideo.png',
-            triplet: '/triplet.png'
         }
     });
 };
@@ -58,6 +57,11 @@ var processImage = function(imageObject){
         burnInLayers,
         uploadImage
     ]);
+};
+
+var inferOverlay = function(type, brand){
+    var brandNormalised = brand.toLowerCase().replace(/ /g,'');
+    return brandNormalised + "-" + type + ".png";
 };
 
 var createDir = function(){
@@ -108,11 +112,12 @@ var resizeImage = function(imageObject, callback){
 
 var burnInLayers = function(imageObject, callback){
     var file = imageObject.dest,
-        type = imageObject.type;
+        type = imageObject.type,
+        brand = imageObject.brand;
 
     console.log('Burn in layers on ' + file);
 
-    var overlay = profiles[ type ].overlay;
+    var overlay = inferOverlay(type, brand);
     var fileParsed = path.parse(file),
         outputFilename = [fileParsed.name, 'overlayed', 'png'].join('.'),
         outputPath = path.join(fileParsed.dir, outputFilename);
